@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Shield, Key, Smartphone, UserPlus, CheckCircle2, AlertTriangle, RefreshCw, KeyRound, Phone, Download } from 'lucide-react';
+import { Shield, Key, Smartphone, UserPlus, CheckCircle2, AlertTriangle, RefreshCw, KeyRound, Phone, Download, Eye, EyeOff } from 'lucide-react';
 import { Database, CONSEJOS_POPULARES_BAYAMO } from '../dbStore';
 import { User, UserRole } from '../types';
 import AppLogo from './AppLogo';
@@ -23,6 +23,7 @@ export default function Auth({ onLoginSuccess }: AuthProps) {
   const [role, setRole] = useState<UserRole>('activista');
   const [deviceId, setDeviceId] = useState('');
   const [mobile, setMobile] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   
   // 2FA state
   const [showTwoFactor, setShowTwoFactor] = useState(false);
@@ -49,14 +50,10 @@ export default function Auth({ onLoginSuccess }: AuthProps) {
           const data = JSON.parse(content);
           
           if (data.type === 'admin_device_key' && data.deviceId) {
-            const success = Database.addAdminDeviceKey(data.deviceId);
-            if (success) {
-              setInfo('Llave de dispositivo cargada con éxito. El administrador ahora puede acceder desde esta terminal.');
-              setDeviceId(data.deviceId);
-              localStorage.setItem('pcc_device_id', data.deviceId);
-            } else {
-              setInfo('Este dispositivo ya cuenta con autorización o no se pudo procesar la llave.');
-            }
+            Database.addAdminDeviceKey(data.deviceId);
+            setInfo('Llave de dispositivo procesada. El administrador ahora puede intentar acceder desde esta terminal.');
+            setDeviceId(data.deviceId);
+            localStorage.setItem('pcc_device_id', data.deviceId);
           } else if (data.type === 'users_backup' && Array.isArray(data.users)) {
             Database.importUsers(data.users);
             setInfo('Base de datos de usuarios sincronizada con éxito. Ahora puede iniciar sesión con sus credenciales autorizadas.');
@@ -433,10 +430,20 @@ export default function Auth({ onLoginSuccess }: AuthProps) {
         )}
 
         {/* Device ID Display Section */}
-        <div className="mb-4 p-3 bg-zinc-50 dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800 rounded-xl flex flex-col items-center gap-1">
+        <div className="mb-4 p-3 bg-zinc-50 dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800 rounded-xl flex flex-col items-center gap-2">
           <div className="text-[9px] uppercase tracking-widest text-gray-400 dark:text-zinc-500 font-mono font-bold">Identificador Único del Terminal</div>
-          <div className="text-xs font-mono font-bold text-rose-700 dark:text-rose-500 bg-white dark:bg-black px-2 py-0.5 rounded border border-gray-200 dark:border-zinc-800 shadow-sm" id="display-device-id">
-            {deviceId || 'GENERANDO...'}
+          <div className="flex items-center gap-2">
+            <div className="text-xs font-mono font-bold text-rose-700 dark:text-rose-500 bg-white dark:bg-black px-2 py-0.5 rounded border border-gray-200 dark:border-zinc-800 shadow-sm" id="display-device-id">
+              {deviceId || 'GENERANDO...'}
+            </div>
+            <button
+              onClick={() => setShowDeviceSetup(true)}
+              className="p-1 text-gray-400 hover:text-rose-600 dark:text-zinc-500 dark:hover:text-rose-500 transition-colors"
+              title="Re-identificar Dispositivo"
+              id="btn-re-identify"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
 
@@ -482,15 +489,25 @@ export default function Auth({ onLoginSuccess }: AuthProps) {
 
                   <div>
                     <label className="block text-xs font-medium text-gray-500 dark:text-zinc-400 mb-1.5">Contraseña Encriptada</label>
-                    <input 
-                      type="password" 
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••"
-                      className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-250 dark:border-zinc-700 focus:border-rose-600/50 rounded-xl py-2.5 px-3.5 text-sm text-gray-900 dark:text-zinc-100 placeholder-gray-400 focus:outline-none focus:bg-white dark:bg-zinc-950 transition-colors"
-                      disabled={deviceStatus === 'bloqueado'}
-                      id="input-password"
-                    />
+                    <div className="relative">
+                      <input 
+                        type={showPassword ? "text" : "password"} 
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-250 dark:border-zinc-700 focus:border-rose-600/50 rounded-xl py-2.5 px-3.5 text-sm text-gray-900 dark:text-zinc-100 placeholder-gray-400 focus:outline-none focus:bg-white dark:bg-zinc-950 transition-colors"
+                        disabled={deviceStatus === 'bloqueado'}
+                        id="input-password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-zinc-500 dark:hover:text-zinc-300 transition-colors cursor-pointer"
+                        id="btn-toggle-password"
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
                   </div>
 
                   <button
@@ -583,14 +600,24 @@ export default function Auth({ onLoginSuccess }: AuthProps) {
 
                   <div>
                     <label className="block text-xs font-medium text-gray-500 dark:text-zinc-400 mb-1.5">Contraseña de Acceso</label>
-                    <input 
-                      type="password" 
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Mínimo 6 caracteres"
-                      className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-250 dark:border-zinc-700 focus:border-rose-600/50 rounded-xl py-2.5 px-3.5 text-sm text-gray-900 dark:text-zinc-100 placeholder-gray-400 focus:outline-none focus:bg-white dark:bg-zinc-950 transition-colors"
-                      id="input-reg-password"
-                    />
+                    <div className="relative">
+                      <input 
+                        type={showPassword ? "text" : "password"} 
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Mínimo 6 caracteres"
+                        className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-250 dark:border-zinc-700 focus:border-rose-600/50 rounded-xl py-2.5 px-3.5 text-sm text-gray-900 dark:text-zinc-100 placeholder-gray-400 focus:outline-none focus:bg-white dark:bg-zinc-950 transition-colors"
+                        id="input-reg-password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-zinc-500 dark:hover:text-zinc-300 transition-colors cursor-pointer"
+                        id="btn-toggle-reg-password"
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
                   </div>
 
                   <div>

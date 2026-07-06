@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   Users, UserPlus, Search, Filter, Shield, Phone, KeyRound, 
   Edit2, Trash2, Check, X, AlertTriangle, ToggleLeft, ToggleRight,
-  ShieldCheck, ShieldAlert, Download
+  ShieldCheck, ShieldAlert, Download, Eye, EyeOff
 } from 'lucide-react';
 import { Database } from '../dbStore';
 import { User, UserRole } from '../types';
@@ -40,6 +40,7 @@ export default function UserManager({ currentUsername, currentUserId, deviceId, 
   const [extraDeviceIds, setExtraDeviceIds] = useState<string[]>(['', '']);
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(true);
   const [active, setActive] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
   
   // Feedback alerts
   const [error, setError] = useState('');
@@ -514,15 +515,25 @@ export default function UserManager({ currentUsername, currentUserId, deviceId, 
                   <KeyRound className="w-3.5 h-3.5 text-rose-600 dark:text-rose-500" />
                   <span>Contraseña de Acceso <span className="text-rose-500">*</span></span>
                 </label>
-                <input 
-                  type="text"
-                  required
-                  placeholder="Contraseña de alta seguridad"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-gray-50 dark:bg-zinc-900 dark:bg-zinc-950 border border-gray-250 dark:border-zinc-700 dark:border-zinc-800 focus:border-rose-600/50 rounded-xl py-2 px-3 text-xs text-gray-900 dark:text-zinc-100 dark:text-zinc-100 focus:outline-none focus:bg-white dark:bg-zinc-950 dark:focus:bg-zinc-900 transition-all placeholder-gray-400 dark:placeholder-zinc-650"
-                  id="input-form-password"
-                />
+                <div className="relative">
+                  <input 
+                    type={showPassword ? "text" : "password"}
+                    required
+                    placeholder="Contraseña de alta seguridad"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full bg-gray-50 dark:bg-zinc-900 dark:bg-zinc-950 border border-gray-250 dark:border-zinc-700 dark:border-zinc-800 focus:border-rose-600/50 rounded-xl py-2 px-3 text-xs text-gray-900 dark:text-zinc-100 dark:text-zinc-100 focus:outline-none focus:bg-white dark:bg-zinc-950 dark:focus:bg-zinc-900 transition-all placeholder-gray-400 dark:placeholder-zinc-650"
+                    id="input-form-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-zinc-500 dark:hover:text-zinc-300 transition-colors cursor-pointer"
+                    id="btn-toggle-mgr-password"
+                  >
+                    {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
               </div>
 
               <div>
