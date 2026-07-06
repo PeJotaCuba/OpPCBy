@@ -1,0 +1,6 @@
+{
+  "name": "Opinión del Pueblo",
+  "description": "Sistema de gestión y análisis estadístico de la Opinión del Pueblo para el Partido Comunista de Cuba (PCC). Permite el registro seguro de opiniones, control de dispositivos, auditoría, alertas críticas e informes descargables sin conexión a servicios de IA para máxima privacidad.",
+  "requestFramePermissions": ["camera", "microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

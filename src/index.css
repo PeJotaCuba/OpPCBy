@@ -1,0 +1,82 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+/* Print CSS Styles for professional PDF reports */
+@media print {
+  body {
+    background-color: white !important;
+    color: black !important;
+    font-family: Arial, sans-serif;
+  }
+  
+  /* Hide sidebar, buttons, filters, and unrelated blocks */
+  #sidebar, 
+  #header-role-switcher,
+  #filter-panel, 
+  #form-tabs-bar, 
+  #opinion-form-section form,
+  #export-buttons-group,
+  #sql-console-tab,
+  #device-manager-tab,
+  #audit-filters-panel,
+  button,
+  footer {
+    display: none !important;
+  }
+
+  /* Full width for print contents */
+  main, #dashboard-tab, #opinions-list, #audit-logs-section {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  /* Keep table simple and readable */
+  table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+  }
+  
+  th, td {
+    border: 1px solid #ddd !important;
+    padding: 6px !important;
+    color: black !important;
+    font-size: 10pt !important;
+  }
+
+  th {
+    background-color: #f5f5f5 !important;
+    font-weight: bold !important;
+  }
+
+  /* Keep stats clean */
+  #stats-grid {
+    grid-template-cols: repeat(4, 1fr) !important;
+    gap: 10px !important;
+    display: grid !important;
+    margin-bottom: 20px !important;
+  }
+
+  #stats-grid > div {
+    border: 1px solid #ccc !important;
+    padding: 10px !important;
+    border-radius: 8px !important;
+    background-color: white !important;
+    color: black !important;
+  }
+
+  /* Hide charting visuals as SVGs might render weirdly in print-to-pdf */
+  #charts-grid {
+    display: none !important;
+  }
+}
