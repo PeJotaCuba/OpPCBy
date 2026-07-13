@@ -10,7 +10,7 @@ import {
   PieChart, Pie, Cell, AreaChart, Area
 } from 'recharts';
 import { 
-  Filter, Calendar, MapPin, Tag, Download, Search, RefreshCw, FileText, 
+  Filter, Calendar, MapPin, Tag, Search, RefreshCw, FileText, 
   CheckCircle, AlertOctagon, TrendingUp, HelpCircle, FileSpreadsheet, Trash2, PlusCircle
 } from 'lucide-react';
 import { Database, OPINION_SECTORS, CONSEJOS_POPULARES_BAYAMO } from '../dbStore';
@@ -222,39 +222,6 @@ export default function Dashboard({ currentRole, currentUsername, onNavigateToFo
 
   // --- EXPORT FUNCTIONS ---
   
-  // 1. Export CSV
-  const handleExportCSV = () => {
-    if (filteredOpinions.length === 0) {
-      alert('No existen registros que coincidan con los filtros seleccionados para exportar.');
-      return;
-    }
-
-    let csvContent = 'ID,Codigo Verification,Sector,Municipio,Fecha,Sentimiento,Origen,Opinión,Registrado por\n';
-    
-    filteredOpinions.forEach(op => {
-      const sanitizedText = op.text.replace(/"/g, '""').replace(/\n/g, ' ');
-      csvContent += `"${op.id}","${op.code}","${op.sector}","${op.consejoPopular}","${op.date}","${op.sentiment}","${op.source}","${sanitizedText}","${op.contributor}"\n`;
-    });
-
-    const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `PCC_Opiniones_Pueblo_${new Date().toISOString().substring(0,10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    Database.logActivity(
-      'current_user',
-      currentUsername,
-      currentRole,
-      'Exportar CSV',
-      `Consolidación de opiniones exportada a CSV (${filteredOpinions.length} registros)`,
-      localStorage.getItem('pcc_device_id') || 'DEV_UNKNOWN'
-    );
-  };
-
   // 2. Export XLSX (Relational Spreadsheet XML)
   const handleExportXLSX = () => {
     if (filteredOpinions.length === 0) {
@@ -790,44 +757,37 @@ td { border: 1px solid #cbd5e1; padding: 8px; font-size: 9.5pt; vertical-align: 
           </div>
 
           {/* Export Buttons */}
-          <div className="flex items-center gap-2 flex-wrap" id="export-buttons-group">
-            <span className="text-[10px] text-gray-500 dark:text-zinc-400 font-mono font-bold mr-1">EXPORTAR EXPEDIENTE:</span>
-            <button
-              onClick={handleExportCSV}
-              className="px-2.5 py-1.5 text-xs text-gray-750 bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 hover:bg-gray-50 dark:bg-zinc-900 rounded-lg hover:text-gray-950 transition-colors flex items-center gap-1 cursor-pointer"
-              title="Descargar CSV plano"
-              id="btn-export-csv"
-            >
-              <Download className="w-3.5 h-3.5 text-gray-400 dark:text-zinc-500" />
-              <span>CSV</span>
-            </button>
-            <button
-              onClick={handleExportXLSX}
-              className="px-2.5 py-1.5 text-xs text-gray-750 bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 hover:bg-gray-50 dark:bg-zinc-900 rounded-lg hover:text-gray-950 transition-colors flex items-center gap-1 cursor-pointer"
-              title="Descargar en Excel estructurado"
-              id="btn-export-xlsx"
-            >
-              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Excel (XLSX)</span>
-            </button>
-            <button
-              onClick={handleExportDOCX}
-              className="px-2.5 py-1.5 text-xs text-gray-750 bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 hover:bg-gray-50 dark:bg-zinc-900 rounded-lg hover:text-gray-950 transition-colors flex items-center gap-1 cursor-pointer"
-              title="Descargar en Word de oficina"
-              id="btn-export-docx"
-            >
-              <FileText className="w-3.5 h-3.5 text-blue-600" />
-              <span>Word (DOCX)</span>
-            </button>
-            <button
-              onClick={handlePrintPDF}
-              className="px-2.5 py-1.5 text-xs text-rose-750 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 hover:bg-rose-100 rounded-lg hover:text-rose-900 transition-colors flex items-center gap-1 cursor-pointer font-bold"
-              title="Imprimir reporte en papel o guardar en PDF"
-              id="btn-export-pdf"
-            >
-              <FileText className="w-3.5 h-3.5 text-rose-600 dark:text-rose-500" />
-              <span>Guardar PDF / Imprimir</span>
-            </button>
+          <div className="flex w-full sm:w-auto items-center justify-between sm:justify-end gap-2" id="export-buttons-group">
+            <span className="text-[10px] text-gray-500 dark:text-zinc-400 font-mono font-bold mr-2 hidden sm:block shrink-0">EXPORTAR EXPEDIENTE:</span>
+            <div className="w-full sm:w-auto grid grid-cols-3 sm:flex items-center gap-2">
+              <button
+                onClick={handleExportXLSX}
+                className="w-full sm:w-auto px-1 sm:px-3 py-2 sm:py-1.5 justify-center text-[11px] sm:text-xs text-gray-700 bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 hover:bg-gray-50 dark:bg-zinc-900 rounded-lg hover:text-gray-900 transition-colors flex items-center gap-1.5 cursor-pointer font-medium"
+                title="Descargar en Excel estructurado"
+                id="btn-export-xlsx"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <span>Excel</span>
+              </button>
+              <button
+                onClick={handleExportDOCX}
+                className="w-full sm:w-auto px-1 sm:px-3 py-2 sm:py-1.5 justify-center text-[11px] sm:text-xs text-gray-700 bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 hover:bg-gray-50 dark:bg-zinc-900 rounded-lg hover:text-gray-900 transition-colors flex items-center gap-1.5 cursor-pointer font-medium"
+                title="Descargar en Word de oficina"
+                id="btn-export-docx"
+              >
+                <FileText className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                <span>Word</span>
+              </button>
+              <button
+                onClick={handlePrintPDF}
+                className="w-full sm:w-auto px-1 sm:px-3 py-2 sm:py-1.5 justify-center text-[11px] sm:text-xs text-rose-700 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 hover:bg-rose-100 rounded-lg hover:text-rose-900 transition-colors flex items-center gap-1.5 cursor-pointer font-bold shadow-sm"
+                title="Imprimir reporte en papel o guardar en PDF"
+                id="btn-export-pdf"
+              >
+                <FileText className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                <span>PDF</span>
+              </button>
+            </div>
           </div>
         </div>
 

@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   LayoutDashboard, PlusCircle, Smartphone, History, Terminal, 
   LogOut, User as UserIcon, Shield, Sparkles, Lock, ShieldCheck, RefreshCw, Info,
-  Users, Download, UserCircle
+  Users, Download, UserCircle, Menu, X
 } from 'lucide-react';
 import { Database } from './dbStore';
 import { User, UserRole } from './types';
@@ -57,6 +57,7 @@ export default function App() {
   const [deviceId, setDeviceId] = useState('');
   const [activeTab, setActiveTab] = useState<'dashboard' | 'form' | 'devices' | 'audit' | 'sql' | 'users'>('dashboard');
   const [unreadCount, setUnreadCount] = useState(0);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const isDarkMode = false;
 
@@ -96,6 +97,7 @@ export default function App() {
     } else {
       setActiveTab('dashboard');
     }
+    setIsMobileMenuOpen(false);
   };
 
   const handleLogout = () => {
@@ -150,6 +152,7 @@ export default function App() {
           setActiveTab('dashboard');
         }
       }
+      setIsMobileMenuOpen(false);
       
       updateBadge();
     }
@@ -293,20 +296,42 @@ export default function App() {
     );
   }
 
+  const navigate = (tab: typeof activeTab) => {
+    setActiveTab(tab);
+    setIsMobileMenuOpen(false);
+  };
+
   return (
-    <div className="min-h-screen bg-[#F3F4F6] dark:bg-zinc-950 text-[#111827] dark:text-zinc-100 font-sans flex flex-col md:flex-row relative" id="app-shell">
+    <div className="min-h-screen bg-[#F3F4F6] dark:bg-zinc-950 text-[#111827] dark:text-zinc-100 font-sans flex relative overflow-hidden" id="app-shell">
       {/* Absolute background vector mesh */}
       <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(220,38,38,0.012)_1px,transparent_1px),linear-gradient(to_right,rgba(220,38,38,0.012)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
 
+      {/* Mobile Menu Backdrop */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 z-40 md:hidden backdrop-blur-sm"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
       {/* SIDEBAR NAVIGATION PANEL */}
-      <aside className="w-full md:w-64 bg-[#1A1A1A] border-b md:border-b-0 md:border-r border-rose-900 flex flex-col shrink-0 z-10" id="sidebar">
+      <aside 
+        className={`fixed inset-y-0 left-0 w-[260px] md:w-64 bg-[#1A1A1A] border-r border-rose-900 flex flex-col shrink-0 z-50 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        id="sidebar"
+      >
         
         {/* Customized PCC Red/Patriotic Brand Header */}
-        <div className="pt-2.5 pb-1.5 px-3 bg-white dark:bg-[#1A1A1A] border-b border-gray-200 dark:border-white/10 flex flex-col items-center">
+        <div className="pt-2.5 pb-1.5 px-3 bg-white dark:bg-[#1A1A1A] border-b border-gray-200 dark:border-white/10 flex flex-col items-center relative">
           <AppLogo size="sm" className="w-full justify-center" />
           <p className="mt-0.5 text-[12.5px] font-sans font-black tracking-widest text-[#DC2626] dark:text-[#EF4444] uppercase text-center">
             Comité Municipal Bayamo
           </p>
+          <button 
+            className="absolute top-2 right-2 md:hidden p-1.5 text-gray-500 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-white bg-gray-100 dark:bg-zinc-800 rounded-lg"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
 
         {/* CURRENT USER SUMMARY PORTRAIT */}
@@ -333,7 +358,7 @@ export default function App() {
         <nav className="flex-1 overflow-y-auto">
           {/* TAB: TABLERO */}
           <button
-            onClick={() => setActiveTab('dashboard')}
+            onClick={() => navigate('dashboard')}
             className={`w-full py-2.5 px-4 text-xs font-bold flex items-center gap-2.5 transition-all text-left rounded-none border-l-4 ${activeTab === 'dashboard' ? 'bg-rose-950/40 text-white border-rose-600 font-bold' : 'text-zinc-300 hover:text-white hover:bg-white/10 border-transparent'}`}
             id="nav-dashboard"
           >
@@ -343,7 +368,7 @@ export default function App() {
 
           {/* TAB: REGISTRAR */}
           <button
-            onClick={() => setActiveTab('form')}
+            onClick={() => navigate('form')}
             className={`w-full py-2.5 px-4 text-xs font-bold flex items-center gap-2.5 transition-all text-left rounded-none border-l-4 ${activeTab === 'form' ? 'bg-rose-950/40 text-white border-rose-600 font-bold' : 'text-zinc-300 hover:text-white hover:bg-white/10 border-transparent'}`}
             id="nav-form"
           >
@@ -354,7 +379,7 @@ export default function App() {
           {/* TAB: DISPOSITIVOS (Admin Only) */}
           {currentUser.role === 'administrador' && (
             <button
-              onClick={() => setActiveTab('devices')}
+              onClick={() => navigate('devices')}
               className={`w-full py-2.5 px-4 text-xs font-bold flex items-center gap-2.5 transition-all text-left rounded-none border-l-4 ${activeTab === 'devices' ? 'bg-rose-950/40 text-white border-rose-600 font-bold' : 'text-zinc-300 hover:text-white hover:bg-white/10 border-transparent'}`}
               id="nav-devices"
             >
@@ -366,7 +391,7 @@ export default function App() {
           {/* TAB: GESTION DE USUARIOS (Admin Only) */}
           {currentUser.role === 'administrador' && (
             <button
-              onClick={() => setActiveTab('users')}
+              onClick={() => navigate('users')}
               className={`w-full py-2.5 px-4 text-xs font-bold flex items-center gap-2.5 transition-all text-left rounded-none border-l-4 ${activeTab === 'users' ? 'bg-rose-950/40 text-white border-rose-600 font-bold' : 'text-zinc-300 hover:text-white hover:bg-white/10 border-transparent'}`}
               id="nav-users"
             >
@@ -378,7 +403,7 @@ export default function App() {
           {/* TAB: BITÁCORA AUDITORÍA (Admin Only) */}
           {currentUser.role === 'administrador' && (
             <button
-              onClick={() => setActiveTab('audit')}
+              onClick={() => navigate('audit')}
               className={`w-full py-2.5 px-4 text-xs font-bold flex items-center gap-2.5 transition-all text-left rounded-none border-l-4 ${activeTab === 'audit' ? 'bg-rose-950/40 text-white border-rose-600 font-bold' : 'text-zinc-300 hover:text-white hover:bg-white/10 border-transparent'}`}
               id="nav-audit"
             >
@@ -391,7 +416,7 @@ export default function App() {
           {currentUser.role === 'administrador' && (
             <>
               <button
-                onClick={() => setActiveTab('sql')}
+                onClick={() => navigate('sql')}
                 className={`w-full py-2.5 px-4 text-xs font-bold flex items-center gap-2.5 transition-all text-left rounded-none border-l-4 ${activeTab === 'sql' ? 'bg-rose-950/40 text-white border-rose-600 font-bold' : 'text-zinc-300 hover:text-white hover:bg-white/10 border-transparent'}`}
                 id="nav-sql"
               >
@@ -453,15 +478,30 @@ export default function App() {
 
         {/* LOGOUT AND BRAND STAMP FOOTER */}
         <div className="py-2.5 px-3 border-t border-white/10 bg-black/20 space-y-2">
-          {currentUser.role === 'administrador' && (
-            <button
-              onClick={() => setActiveTab('users')}
-              className="w-full py-2 bg-rose-950/30 hover:bg-rose-950/50 border border-rose-900/50 text-rose-300 text-xs font-bold rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer"
-              id="btn-my-profile"
-            >
-              <UserCircle className="w-3.5 h-3.5" />
-              <span>Mi Perfil de Mando</span>
-            </button>
+          {originalUser?.role === 'administrador' && (
+            <div className="flex flex-col gap-1.5 p-2 bg-zinc-900/50 rounded-xl mb-2 border border-zinc-800 lg:hidden">
+              <span className="text-[9px] uppercase tracking-widest text-zinc-500 font-mono text-center">Modo Demo (Evaluador)</span>
+              <div className="flex justify-center gap-1">
+                  <button 
+                    onClick={() => handleTestingRoleSwitch('administrador')} 
+                    className={`flex-1 px-1 py-1 rounded text-[9px] font-bold font-sans transition-all ${currentUser.role === 'administrador' ? 'bg-rose-650 text-white' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'}`}
+                  >
+                    Admin
+                  </button>
+                  <button 
+                    onClick={() => handleTestingRoleSwitch('compilador')} 
+                    className={`flex-1 px-1 py-1 rounded text-[9px] font-bold font-sans transition-all ${currentUser.role === 'compilador' ? 'bg-rose-650 text-white' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'}`}
+                  >
+                    Compil
+                  </button>
+                  <button 
+                    onClick={() => handleTestingRoleSwitch('activista')} 
+                    className={`flex-1 px-1 py-1 rounded text-[9px] font-bold font-sans transition-all ${currentUser.role === 'activista' ? 'bg-rose-650 text-white' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'}`}
+                  >
+                    Activ
+                  </button>
+              </div>
+            </div>
           )}
 
           <button
@@ -481,12 +521,19 @@ export default function App() {
       </aside>
 
       {/* MAIN CONTENT AREA */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-y-auto" id="main-content">
+      <main className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto" id="main-content">
         
         {/* SYSTEM APP BAR HEADER */}
-        <header className="h-16 border-b border-gray-200 dark:border-zinc-800 px-6 flex items-center justify-between bg-white dark:bg-zinc-900 text-gray-900 dark:text-white shrink-0">
+        <header className="h-16 border-b border-gray-200 dark:border-zinc-800 px-4 md:px-6 flex items-center justify-between bg-white dark:bg-zinc-900 text-gray-900 dark:text-white shrink-0 sticky top-0 z-20 shadow-sm">
           <div className="flex items-center gap-3">
-            <h2 className="text-sm font-bold tracking-tight text-gray-900 dark:text-white hidden sm:block">
+            <button 
+              className="md:hidden p-2 -ml-2 text-gray-500 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-white rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+              onClick={() => setIsMobileMenuOpen(true)}
+              title="Abrir menú"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <h2 className="text-sm font-bold tracking-tight text-gray-900 dark:text-white line-clamp-1">
               {activeTab === 'dashboard' && 'Tablero de Control Estadístico en Tiempo Real'}
               {activeTab === 'form' && 'Recepción Directa y Procesado de Opiniones'}
               {activeTab === 'devices' && 'Control Estatal de Dispositivos Autorizados'}

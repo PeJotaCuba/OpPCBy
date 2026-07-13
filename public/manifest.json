@@ -1,0 +1,17 @@
+{
+  "name": "PCC Localhost",
+  "short_name": "PCC",
+  "description": "Sistema de Control de Opiniones",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#DC2626",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192 512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

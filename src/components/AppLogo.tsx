@@ -23,8 +23,8 @@ export default function AppLogo({ className = '', size = 'md', theme = 'auto' }:
     styleContainer = { width: '240px', height: '192px' };
     styleImage = { height: '260px', width: '192px', transform: 'scale(1.4)' };
   } else if (size === 'lg') {
-    styleContainer = { width: '360px', height: '288px' };
-    styleImage = { height: '390px', width: '288px', transform: 'scale(1.4)' };
+    styleContainer = { width: '350px', height: '350px' };
+    styleImage = { height: '350px', width: '350px', transform: 'scale(1.4)' };
   }
 
   return (

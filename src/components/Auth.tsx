@@ -27,7 +27,8 @@ export default function Auth({ onLoginSuccess }: AuthProps) {
   
   // 2FA state
   const [showTwoFactor, setShowTwoFactor] = useState(false);
-  const [twoFactorCode, setTwoFactorCode] = useState('');
+  const [captchaCode, setCaptchaCode] = useState('');
+  const [captchaInput, setCaptchaInput] = useState('');
   const [tempUser, setTempUser] = useState<User | null>(null);
   
   // Status states
@@ -111,6 +112,16 @@ export default function Auth({ onLoginSuccess }: AuthProps) {
     }
   }, [deviceId]);
 
+  const generateCaptcha = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let result = '';
+    for (let i = 0; i < 5; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setCaptchaCode(result);
+    setCaptchaInput('');
+  };
+
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -192,24 +203,22 @@ export default function Auth({ onLoginSuccess }: AuthProps) {
       }
     }
 
-    // Set temp user for 2FA validation step
+    // Set temp user for Captcha validation step
     setTempUser(user);
+    generateCaptcha();
     setShowTwoFactor(true);
     
     // Log initial login step
-    Database.logActivity(user.id, user.fullName, user.role, 'Inicio de Sesión', `Credenciales correctas. Reclamo de código 2FA.`, deviceId, 'éxito');
+    Database.logActivity(user.id, user.fullName, user.role, 'Inicio de Sesión', `Credenciales correctas. Reclamo de código de verificación.`, deviceId, 'éxito');
   };
 
-  const handleVerify2FA = (e: React.FormEvent) => {
+  const handleVerifyCaptcha = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
     if (!tempUser) return;
 
-    // Simulate 2FA code verification
-    // Secret code is always '1961' (Year of the Literacy Campaign / Campaign of Playa Girón, highly thematic)
-    // Or if they write any 6-digit number, we can let them login, but '1961' is the secret key
-    if (twoFactorCode === '1961' || twoFactorCode.length === 6) {
+    if (captchaInput.toUpperCase() === captchaCode && captchaCode !== '') {
       // Approve device connection
       if (tempUser.role === 'administrador' && deviceStatus === 'nuevo') {
         Database.registerDevice({
@@ -223,12 +232,13 @@ export default function Auth({ onLoginSuccess }: AuthProps) {
         setDeviceStatus('aprobado');
       }
 
-      Database.logActivity(tempUser.id, tempUser.fullName, tempUser.role, 'Verificación 2FA', `Acceso autorizado mediante 2FA.`, deviceId, 'éxito');
+      Database.logActivity(tempUser.id, tempUser.fullName, tempUser.role, 'Verificación CAPTCHA', `Acceso autorizado.`, deviceId, 'éxito');
       
       onLoginSuccess(tempUser, deviceId);
     } else {
-      setError('Código de Doble Factor incorrecto. Inténtelo de nuevo.');
-      Database.logActivity(tempUser.id, tempUser.fullName, tempUser.role, 'Fallo 2FA', `Intento fallido de código doble factor.`, deviceId, 'advertencia');
+      setError('Código de verificación incorrecto. Inténtelo de nuevo.');
+      generateCaptcha();
+      Database.logActivity(tempUser.id, tempUser.fullName, tempUser.role, 'Fallo CAPTCHA', `Intento fallido de código de verificación.`, deviceId, 'advertencia');
     }
   };
 
@@ -430,20 +440,10 @@ export default function Auth({ onLoginSuccess }: AuthProps) {
         )}
 
         {/* Device ID Display Section */}
-        <div className="mb-4 p-3 bg-zinc-50 dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800 rounded-xl flex flex-col items-center gap-2">
+        <div className="mb-4 flex flex-col items-center gap-1">
           <div className="text-[9px] uppercase tracking-widest text-gray-400 dark:text-zinc-500 font-mono font-bold">Identificador Único del Terminal</div>
-          <div className="flex items-center gap-2">
-            <div className="text-xs font-mono font-bold text-rose-700 dark:text-rose-500 bg-white dark:bg-black px-2 py-0.5 rounded border border-gray-200 dark:border-zinc-800 shadow-sm" id="display-device-id">
-              {deviceId || 'GENERANDO...'}
-            </div>
-            <button
-              onClick={() => setShowDeviceSetup(true)}
-              className="p-1 text-gray-400 hover:text-rose-600 dark:text-zinc-500 dark:hover:text-rose-500 transition-colors"
-              title="Re-identificar Dispositivo"
-              id="btn-re-identify"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-            </button>
+          <div className="text-xs font-mono font-bold text-gray-600 dark:text-zinc-400" id="display-device-id">
+            {deviceId || 'GENERANDO...'}
           </div>
         </div>
 
@@ -480,7 +480,7 @@ export default function Auth({ onLoginSuccess }: AuthProps) {
                       type="text" 
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
-                      placeholder="ej. oppccadmin o 54413935"
+                      placeholder="Ingrese usuario o móvil"
                       className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-250 dark:border-zinc-700 focus:border-rose-600/50 rounded-xl py-2.5 px-3.5 text-sm text-gray-900 dark:text-zinc-100 placeholder-gray-400 focus:outline-none focus:bg-white dark:bg-zinc-950 transition-colors"
                       disabled={deviceStatus === 'bloqueado'}
                       id="input-username"
@@ -667,71 +667,63 @@ export default function Auth({ onLoginSuccess }: AuthProps) {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.3 }}
             >
-              <form onSubmit={handleVerify2FA} className="space-y-4">
+              <form onSubmit={handleVerifyCaptcha} className="space-y-4">
                 <div className="text-center flex flex-col items-center">
                   <div className="w-12 h-12 bg-rose-50 dark:bg-rose-950/30 rounded-full flex items-center justify-center border border-rose-100 dark:border-rose-900/50 mb-3">
-                    <KeyRound className="w-6 h-6 text-rose-600 dark:text-rose-500 animate-pulse" />
+                    <Shield className="w-6 h-6 text-rose-600 dark:text-rose-500" />
                   </div>
-                  <h2 className="text-base font-bold text-gray-900 dark:text-zinc-100">Doble Factor de Seguridad (2FA)</h2>
+                  <h2 className="text-base font-bold text-gray-900 dark:text-zinc-100">Verificación de Seguridad</h2>
                   <p className="text-xs text-gray-500 dark:text-zinc-400 mt-1.5 max-w-xs">
-                    Para la protección de datos soberana, escanee el generador o digite el código de seguridad de 6 dígitos asociado a su credencial.
+                    Complete el código para confirmar que es un operador humano.
                   </p>
                 </div>
 
-                {/* Simulated QR Code Generator */}
-                <div className="flex flex-col items-center justify-center bg-gray-50 dark:bg-zinc-900 p-4 rounded-xl w-44 h-44 mx-auto my-4 border border-gray-200 dark:border-zinc-800 shadow-sm">
-                  {/* Styled Minimal Grid to resemble QR */}
-                  <div className="grid grid-cols-6 gap-1 w-full h-full">
-                    {[...Array(36)].map((_, i) => (
-                      <div 
-                        key={i} 
-                        className={`rounded-sm ${(i % 3 === 0 || i < 6 || i > 30 || (i % 7 === 1 && i > 12 && i < 24)) ? 'bg-gray-800' : 'bg-transparent'}`} 
-                      />
-                    ))}
+                <div className="flex flex-col items-center justify-center bg-gray-100 dark:bg-zinc-900 p-4 rounded-xl border border-gray-200 dark:border-zinc-800 my-4">
+                  <div className="flex items-center gap-3">
+                    <div className="font-mono text-2xl tracking-widest font-black text-gray-800 dark:text-gray-200 line-through decoration-rose-500/50 decoration-2 select-none" id="captcha-code">
+                      {captchaCode}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={generateCaptcha}
+                      className="p-1.5 text-gray-400 hover:text-rose-600 dark:text-zinc-500 dark:hover:text-rose-500 transition-colors bg-white dark:bg-zinc-800 rounded shadow-sm border border-gray-200 dark:border-zinc-700"
+                      title="Refrescar código"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                    </button>
                   </div>
-                </div>
-
-                <div className="text-center">
-                  <div className="text-[10px] font-mono text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-2">Clave de Semilla Autogenerada:</div>
-                  <code className="bg-gray-50 dark:bg-zinc-900 px-2.5 py-1 rounded border border-gray-250 dark:border-zinc-700 text-xs font-mono text-gray-900 dark:text-zinc-100 text-rose-700 dark:text-rose-400 font-bold tracking-widest">
-                    {tempUser?.twoFactorSecret}
-                  </code>
                 </div>
 
                 <div>
-                  <label className="block text-center text-xs font-medium text-gray-500 dark:text-zinc-400 mb-2">Código de Verificación</label>
                   <input 
                     type="text" 
-                    maxLength={6}
-                    value={twoFactorCode}
-                    onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, ''))}
-                    placeholder="ej. 1961"
-                    className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-250 dark:border-zinc-700 focus:border-rose-600/50 rounded-xl py-3 px-3 text-center text-xl font-bold tracking-[0.5em] text-gray-900 dark:text-zinc-100 focus:outline-none focus:bg-white dark:bg-zinc-950 transition-colors"
-                    id="input-2fa-code"
+                    value={captchaInput}
+                    onChange={(e) => setCaptchaInput(e.target.value.toUpperCase())}
+                    placeholder="Ingrese el código superior"
+                    className="w-full text-center tracking-[0.5em] font-mono text-sm bg-gray-50 dark:bg-zinc-900 border border-gray-250 dark:border-zinc-700 focus:border-rose-600/50 rounded-xl py-3 px-3 text-gray-900 dark:text-zinc-100 placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:bg-white dark:bg-zinc-950 transition-colors"
+                    maxLength={5}
+                    required
+                    id="input-captcha"
                   />
-                  <div className="text-center mt-2.5">
-                    <span className="text-[10px] text-gray-400 dark:text-zinc-500">
-                      Ayuda: Código de homologación por defecto <strong>1961</strong>
-                    </span>
-                  </div>
                 </div>
 
                 <div className="flex gap-3 pt-2">
                   <button
                     type="button"
-                    onClick={() => { setShowTwoFactor(false); setTwoFactorCode(''); setError(''); }}
+                    onClick={() => { setShowTwoFactor(false); setCaptchaInput(''); setError(''); }}
                     className="flex-1 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:bg-zinc-700 text-gray-600 dark:text-zinc-400 font-bold py-2.5 rounded-xl text-xs transition-colors cursor-pointer border border-gray-250 dark:border-zinc-700"
-                    id="btn-2fa-cancel"
+                    id="btn-captcha-cancel"
                   >
                     Regresar
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold py-2.5 rounded-xl text-xs transition-colors flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
-                    id="btn-2fa-verify"
+                    disabled={captchaInput.length < 5}
+                    className="flex-1 bg-rose-600 hover:bg-rose-700 disabled:bg-rose-600/50 text-white font-bold py-2.5 rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 shadow-md disabled:shadow-none cursor-pointer"
+                    id="btn-captcha-submit"
                   >
-                    <span>Validar Código</span>
                     <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Verificar</span>
                   </button>
                 </div>
               </form>
